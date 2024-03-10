@@ -6,7 +6,7 @@ use windows::{
         UI::WindowsAndMessaging::{EnumWindows, MessageBoxW, MB_OK, MESSAGEBOX_STYLE},
     },
 };
-use windows_tools;
+mod windows_tools;
 
 fn main() -> Result<()> {
     println!("Hello, world!");
