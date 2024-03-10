@@ -1,0 +1,17 @@
+[package]
+name = "YYScreenTime_win-rs"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+iced = "0.12.1"
+
+[dependencies.windows]
+version = "0.54.0"
+features = [
+    "Win32_Foundation",
+    "Win32_UI_WindowsAndMessaging",
+    "Win32_System_Threading",
+]
