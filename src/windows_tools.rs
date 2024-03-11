@@ -1,6 +1,7 @@
 use std::char::{decode_utf16, REPLACEMENT_CHARACTER};
 use std::fs;
 use std::slice;
+use windows::Win32::Foundation::HMODULE;
 use windows::Win32::UI::WindowsAndMessaging::MB_ICONINFORMATION;
 use windows::{
     core::*,
@@ -15,6 +16,14 @@ use windows::{
     },
 };
 
+#[derive(Debug)]
+struct My_WIN32_ERROR(WIN32_ERROR);
+impl std::fmt::Display for My_WIN32_ERROR {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "Win32 Error: {:?}", &self.0)
+    }
+}
+impl std::error::Error for My_WIN32_ERROR {}
 enum StrAndWin32Error {
     ReasonString(String),
     Win32(WIN32_ERROR),
@@ -23,7 +32,7 @@ enum StrAndWin32Error {
 /*  This function is referred to
 [Native Windows GUI](https://github.com/gabdube/native-windows-gui/tree/master?tab=readme-ov-file) of
 native_windows_gui::enable_visual_styles*/
-pub fn enable_visual_styles() -> std::result::Result<(), StrAndWin32Error> {
+pub fn enable_visual_styles() -> std::result::Result<(), My_WIN32_ERROR> {
     const MAX_PATH_USIZE: usize = MAX_PATH as usize;
     const MANIFEST_CONTENT: &str = r#"
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
@@ -39,7 +48,7 @@ pub fn enable_visual_styles() -> std::result::Result<(), StrAndWin32Error> {
     const ACTCTX_FLAG_SET_PROCESS_DEFAULT: u32 = 0x010;
     let mut tmp_dir = [0u16; MAX_PATH_USIZE + 1];
     if unsafe { GetTempPath2W(Some(&mut tmp_dir)) } == 0 {
-        return Err(StrAndWin32Error::Win32(unsafe { GetLastError() }));
+        return Err(My_WIN32_ERROR(unsafe { GetLastError() }));
     }
     /*if tmp_dir.len() > MAX_PATH_USIZE - 14 {
         println!(
@@ -53,32 +62,50 @@ pub fn enable_visual_styles() -> std::result::Result<(), StrAndWin32Error> {
     }*/
     let mut tmp_path = [0u16; MAX_PATH_USIZE];
     let prefix = w!("nwg");
-    let manifest_path_raw = PCWSTR::from_raw(&tmp_dir as *const u16);
-    if unsafe { GetTempFileNameW(manifest_path_raw, prefix, 0, &mut tmp_path) } == 0 {
-        return Err(StrAndWin32Error::Win32(unsafe { GetLastError() }));
+    let manifest_dir_raw = PCWSTR::from_raw(&tmp_dir as *const u16);
+    let get_tmp_file_result =
+        unsafe { GetTempFileNameW(manifest_dir_raw, prefix, 0, &mut tmp_path) };
+    if get_tmp_file_result == 0 {
+        return Err(My_WIN32_ERROR(unsafe { GetLastError() }));
     }
-    let manifest_path = decode_utf16_with_capacity(&tmp_path[..], MAX_PATH_USIZE);
-    fs::write(&manifest_path, MANIFEST_CONTENT);
+    let manifest_path_utf16 = PCWSTR::from_raw(&tmp_path as *const u16);
+    let manifest_path = decode_utf16_with_capacity(&tmp_path, MAX_PATH_USIZE);
+    if let Err(err) = fs::write(&manifest_path.trim_end(), MANIFEST_CONTENT) {
+        dbg!(err);
+    };
     println!("{}", manifest_path);
     let mut activation_cookie: usize = 0;
     let mut act_ctx = ACTCTXW {
+        cbSize: std::mem::size_of::<ACTCTXW>() as u32,
         dwFlags: ACTCTX_FLAG_SET_PROCESS_DEFAULT,
-        lpSource: manifest_path_raw,
-        ..ACTCTXW::default()
+        lpSource: manifest_path_utf16,
+        wProcessorArchitecture: 0,
+        wLangId: 0,
+        lpAssemblyDirectory: w!(""),
+        lpResourceName: w!(""),
+        lpApplicationName: w!(""),
+        hModule: HMODULE::default(),
     };
     unsafe {
         let handle = match CreateActCtxW(&mut act_ctx) {
             Ok(handle) => handle,
             Err(err) => {
-                println!("{}", line!()); ///// ToDo!
-                return Err(StrAndWin32Error::ReasonString(format!(
-                    "Invallid Handle Error\n{:?}",
-                    err
-                )));
+                dbg!(unsafe { GetLastError() });
+                return Err(My_WIN32_ERROR(unsafe { GetLastError() }));
             }
         };
-        ActivateActCtx(handle, &mut activation_cookie);
+        if let Err(err) = ActivateActCtx(handle, &mut activation_cookie) {
+            return Err(My_WIN32_ERROR(unsafe { GetLastError() }));
+        };
     }
+    unsafe {
+        MessageBoxW(
+            HWND::default(),
+            w!("Hello World!"),
+            w!("YYScreenTime_win-rs"),
+            MB_OK | MB_ICONINFORMATION,
+        )
+    };
     fs::remove_file(&manifest_path);
     Ok(())
 }
