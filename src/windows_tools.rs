@@ -32,9 +32,12 @@ impl std::fmt::Display for EnableVStylesErrors {
 }
 impl std::error::Error for EnableVStylesErrors {}
 
-/*  This function is referred to
-[Native Windows GUI](https://github.com/gabdube/native-windows-gui/tree/master?tab=readme-ov-file) of
-native_windows_gui::enable_visual_styles*/
+/*
+This function is referred to
+[Native Windows GUI](https://github.com/gabdube/native-windows-gui) of
+native_windows_gui::enable_visual_styles
+(in native_windows_gui/src/win32/mod.rs)
+*/
 pub fn enable_visual_styles() -> std::result::Result<(), EnableVStylesErrors> {
     const MAX_PATH_USIZE: usize = MAX_PATH as usize;
     const MANIFEST_CONTENT: &str = r#"
