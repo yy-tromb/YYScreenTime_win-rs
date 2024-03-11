@@ -1,3 +1,4 @@
+use iced;
 use windows::{
     core::*,
     Win32::{
@@ -11,10 +12,13 @@ use windows::{
 mod windows_tools;
 
 fn main() -> Result<()> {
-    /*match windows_tools::enable_visual_styles() {
-        Ok(t) => t,
-        Err(_) => ,
-    };*/
+    match windows_tools::enable_visual_styles() {
+        Ok(_) => (),
+        Err(ref errors) => match errors {
+            windows_tools::EnableVStylesErrors::Win32(win32_error) => println!("{:?}", win32_error),
+            windows_tools::EnableVStylesErrors::Standard(err) => println!("{:?}", err),
+        },
+    };
     println!("Hello, world!");
     unsafe {
         MessageBoxW(

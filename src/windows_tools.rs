@@ -1,7 +1,6 @@
 use std::char::{decode_utf16, REPLACEMENT_CHARACTER};
 use std::fs;
 use std::path::Path;
-use std::slice;
 use windows::Win32::Foundation::HMODULE;
 use windows::Win32::UI::WindowsAndMessaging::MB_ICONINFORMATION;
 use windows::{
@@ -18,29 +17,30 @@ use windows::{
 };
 
 #[derive(Debug)]
-enum Errors<E: std::error::Error>{
+pub enum EnableVStylesErrors {
     Win32(WIN32_ERROR),
-    Standard(E)
-};
-impl std::fmt::Display for Errors {
+    Standard(std::io::Error),
+}
+
+impl std::fmt::Display for EnableVStylesErrors {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match ref self{
-            Win32(win32_error) => write!(f,"Win32 Error: {:?}",win32_error),
-            Standard(err) => write!(f,"{:?}",err)
+        match self {
+            EnableVStylesErrors::Win32(win32_error) => write!(f, "Win32 Error: {:?}", win32_error),
+            EnableVStylesErrors::Standard(err) => write!(f, "{:?}", err),
         }
     }
 }
-impl std::error::Error for Errors{}
+impl std::error::Error for EnableVStylesErrors {}
 
 /*  This function is referred to
 [Native Windows GUI](https://github.com/gabdube/native-windows-gui/tree/master?tab=readme-ov-file) of
 native_windows_gui::enable_visual_styles*/
-pub fn enable_visual_styles() -> std::result::Result<(), Errors> {
+pub fn enable_visual_styles() -> std::result::Result<(), EnableVStylesErrors> {
     const MAX_PATH_USIZE: usize = MAX_PATH as usize;
     const MANIFEST_CONTENT: &str = r#"
-<?xml version="1.0" encoding="UTF-8" standalone="yes"?> 
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <assembly xmlns="urn:schemas-microsoft-com:asm.v1" manifestVersion="1.0">
-    <description>YYScreenTime_win-rs comctl32 manifest</description> 
+    <description>YYScreenTime_win-rs comctl32 manifest</description>
     <dependency>
         <dependentAssembly>
             <assemblyIdentity type="win32" name="Microsoft.Windows.Common-Controls" version="6.0.0.0" processorArchitecture="*" publicKeyToken="6595b64144ccf1df" language="*" /> 
@@ -51,7 +51,7 @@ pub fn enable_visual_styles() -> std::result::Result<(), Errors> {
     const ACTCTX_FLAG_SET_PROCESS_DEFAULT: u32 = 0x010;
     let mut tmp_dir = [0u16; MAX_PATH_USIZE + 1];
     if unsafe { GetTempPath2W(Some(&mut tmp_dir)) } == 0 {
-        return Err(Errors::Win32(unsafe { GetLastError() }));
+        return Err(EnableVStylesErrors::Win32(unsafe { GetLastError() }));
     }
     /*if tmp_dir.len() > MAX_PATH_USIZE - 14 {
         println!(
@@ -66,19 +66,21 @@ pub fn enable_visual_styles() -> std::result::Result<(), Errors> {
     let mut tmp_path = [0u16; MAX_PATH_USIZE];
     let prefix = w!("nwg");
     let manifest_dir_raw = PCWSTR::from_raw(&tmp_dir as *const u16);
-    if unsafe { GetTempFileNameW(manifest_dir_raw, prefix, 0, &mut tmp_path) } ==0 {
-        return Err(Errors::Win32(unsafe {GetLastError()}));
+    if unsafe { GetTempFileNameW(manifest_dir_raw, prefix, 0, &mut tmp_path) } == 0 {
+        return Err(EnableVStylesErrors::Win32(unsafe { GetLastError() }));
     };
     let manifest_path_utf16 = PCWSTR::from_raw(&tmp_path as *const u16);
-    let manifest_path_len = tmp_path.iter().position(|&i| i==0).unwrap_or(s.len());
-    let manifest_path = decode_utf16_with_capacity(&tmp_path[0..manifest_path_len], manifest_path_len);
+    let manifest_path_len = tmp_path
+        .iter()
+        .position(|&i| i == 0)
+        .unwrap_or(tmp_path.len());
+    let manifest_path =
+        decode_utf16_with_capacity(&tmp_path[0..manifest_path_len], manifest_path_len);
     if let Err(err) = fs::write(Path::new(&manifest_path), MANIFEST_CONTENT) {
-        dbg!(err);
-        return Errors::Standard(err);
+        return Err(EnableVStylesErrors::Standard(err));
     };
-    println!("{}", manifest_path);
     let mut activation_cookie: usize = 0;
-    let mut act_ctx = ACTCTXW {
+    let act_ctx = ACTCTXW {
         cbSize: std::mem::size_of::<ACTCTXW>() as u32,
         dwFlags: ACTCTX_FLAG_SET_PROCESS_DEFAULT,
         lpSource: manifest_path_utf16,
@@ -90,31 +92,28 @@ pub fn enable_visual_styles() -> std::result::Result<(), Errors> {
         hModule: HMODULE::default(),
     };
     unsafe {
-        let handle = match CreateActCtxW(&mut act_ctx) {
+        let handle = match CreateActCtxW(&act_ctx) {
             Ok(handle) => handle,
-            Err(err) => {
-                dbg!(unsafe { GetLastError() });
-                return Err(Errors::Win32(unsafe { GetLastError() }));
+            Err(_err) => {
+                if GetLastError() == WIN32_ERROR(0) {
+                    if let Err(err) = fs::remove_file(&manifest_path) {
+                        return Err(EnableVStylesErrors::Standard(err));
+                    };
+                    return Ok(());
+                } else {
+                    return Err(EnableVStylesErrors::Win32(GetLastError()));
+                };
             }
         };
-        if let Err(err) = ActivateActCtx(handle, &mut activation_cookie) {
-            return Err(Errors::Win32(unsafe { GetLastError() }));
+        if let Err(_err) = ActivateActCtx(handle, &mut activation_cookie) {
+            return Err(EnableVStylesErrors::Win32(GetLastError()));
         };
-    }
-    unsafe {
-        MessageBoxW(
-            HWND::default(),
-            w!("Hello World!"),
-            w!("YYScreenTime_win-rs"),
-            MB_OK | MB_ICONINFORMATION,
-        )
     };
-    fs::remove_file(&manifest_path);
+    if let Err(err) = fs::remove_file(&manifest_path) {
+        return Err(EnableVStylesErrors::Standard(err));
+    };
     Ok(())
 }
-
-#[inline]
-fn get_utf16_len(){}
 
 fn decode_utf16_with_capacity(source: &[u16], capacity: usize) -> String {
     let decoded = decode_utf16(source.iter().cloned());
@@ -123,17 +122,4 @@ fn decode_utf16_with_capacity(source: &[u16], capacity: usize) -> String {
         buf.push(r.unwrap_or(REPLACEMENT_CHARACTER));
     }
     buf
-}
-
-#[test]
-fn call_enable_visual_styles() {
-    enable_visual_styles();
-    unsafe {
-        MessageBoxW(
-            HWND::default(),
-            w!("Hello World!"),
-            w!("YYScreenTime_win-rs"),
-            MB_OK | MB_ICONINFORMATION,
-        )
-    };
 }
