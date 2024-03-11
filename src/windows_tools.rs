@@ -1,5 +1,6 @@
 use std::char::{decode_utf16, REPLACEMENT_CHARACTER};
 use std::fs;
+use std::path::Path;
 use std::slice;
 use windows::Win32::Foundation::HMODULE;
 use windows::Win32::UI::WindowsAndMessaging::MB_ICONINFORMATION;
@@ -70,7 +71,7 @@ pub fn enable_visual_styles() -> std::result::Result<(), My_WIN32_ERROR> {
     }
     let manifest_path_utf16 = PCWSTR::from_raw(&tmp_path as *const u16);
     let manifest_path = decode_utf16_with_capacity(&tmp_path, MAX_PATH_USIZE);
-    if let Err(err) = fs::write(&manifest_path.trim_end(), MANIFEST_CONTENT) {
+    if let Err(err) = fs::write(Path::new(manifest_path), MANIFEST_CONTENT) {
         dbg!(err);
     };
     println!("{}", manifest_path);
