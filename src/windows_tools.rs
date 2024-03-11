@@ -75,6 +75,7 @@ pub fn enable_visual_styles() -> std::result::Result<(), Errors> {
     let manifest_path = decode_utf16_with_capacity(&tmp_path, MAX_PATH_USIZE);
     if let Err(err) = fs::write(Path::new(&manifest_path), MANIFEST_CONTENT) {
         dbg!(err);
+        return Errors::Standard(err);
     };
     println!("{}", manifest_path);
     let mut activation_cookie: usize = 0;
