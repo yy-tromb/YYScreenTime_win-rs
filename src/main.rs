@@ -19,7 +19,7 @@ fn main() -> Result<()> {
             windows_tools::EnableVStylesErrors::Standard(err) => println!("{:?}", err),
         },
     };
-    println!("Hello, world!");
+    println!("Hello, World!");
     unsafe {
         MessageBoxW(
             HWND::default(),
