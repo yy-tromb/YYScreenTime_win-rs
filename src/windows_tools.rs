@@ -66,11 +66,9 @@ pub fn enable_visual_styles() -> std::result::Result<(), Errors> {
     let mut tmp_path = [0u16; MAX_PATH_USIZE];
     let prefix = w!("nwg");
     let manifest_dir_raw = PCWSTR::from_raw(&tmp_dir as *const u16);
-    let get_tmp_file_result =
-        unsafe { GetTempFileNameW(manifest_dir_raw, prefix, 0, &mut tmp_path) };
-    if get_tmp_file_result == 0 {
-        return Err(Errors::Win32(unsafe { GetLastError() }));
-    }
+    if unsafe { GetTempFileNameW(manifest_dir_raw, prefix, 0, &mut tmp_path) } ==0 {
+        return Err(Errors::Win32(unsafe {GetLastError()}));
+    };
     let manifest_path_utf16 = PCWSTR::from_raw(&tmp_path as *const u16);
     let manifest_path = decode_utf16_with_capacity(&tmp_path, MAX_PATH_USIZE);
     if let Err(err) = fs::write(Path::new(&manifest_path), MANIFEST_CONTENT) {
