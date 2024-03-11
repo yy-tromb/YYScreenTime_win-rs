@@ -2,6 +2,7 @@
 name = "YYScreenTime_win-rs"
 version = "0.1.0"
 edition = "2021"
+repository = "https://github.com/yy-tromb/YYScreenTime_win-rs"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
