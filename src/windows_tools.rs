@@ -38,12 +38,12 @@ native_windows_gui::enable_visual_styles*/
 pub fn enable_visual_styles() -> std::result::Result<(), Errors> {
     const MAX_PATH_USIZE: usize = MAX_PATH as usize;
     const MANIFEST_CONTENT: &str = r#"
-<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?> 
 <assembly xmlns="urn:schemas-microsoft-com:asm.v1" manifestVersion="1.0">
-    <description>YYScreenTime_win-rs comctl32 manifest</description>
+    <description>YYScreenTime_win-rs comctl32 manifest</description> 
     <dependency>
         <dependentAssembly>
-            <assemblyIdentity type="win32" name="Microsoft.Windows.Common-Controls" version="6.0.0.0" processorArchitecture="*" publicKeyToken="6595b64144ccf1df" language="*" />
+            <assemblyIdentity type="win32" name="Microsoft.Windows.Common-Controls" version="6.0.0.0" processorArchitecture="*" publicKeyToken="6595b64144ccf1df" language="*" /> 
         </dependentAssembly>
     </dependency>
 </assembly>
