@@ -70,7 +70,8 @@ pub fn enable_visual_styles() -> std::result::Result<(), Errors> {
         return Err(Errors::Win32(unsafe {GetLastError()}));
     };
     let manifest_path_utf16 = PCWSTR::from_raw(&tmp_path as *const u16);
-    let manifest_path = decode_utf16_with_capacity(&tmp_path, MAX_PATH_USIZE);
+    let manifest_path_len = tmp_path.iter().position(|&i| i==0).unwrap_or(s.len());
+    let manifest_path = decode_utf16_with_capacity(&tmp_path[0..manifest_path_len], manifest_path_len);
     if let Err(err) = fs::write(Path::new(&manifest_path), MANIFEST_CONTENT) {
         dbg!(err);
         return Errors::Standard(err);
@@ -111,6 +112,9 @@ pub fn enable_visual_styles() -> std::result::Result<(), Errors> {
     fs::remove_file(&manifest_path);
     Ok(())
 }
+
+#[inline]
+fn get_utf16_len(){}
 
 fn decode_utf16_with_capacity(source: &[u16], capacity: usize) -> String {
     let decoded = decode_utf16(source.iter().cloned());
