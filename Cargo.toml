@@ -7,8 +7,9 @@ repository = "https://github.com/yy-tromb/YYScreenTime_win-rs"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-anyhow = "1.0.82"
+anyhow = { version = "1.0.82", features = ["backtrace"] }
 iced = "0.12.1"
+tokio = "1.37.0"
 
 [dependencies.windows]
 version = "0.56.0"
