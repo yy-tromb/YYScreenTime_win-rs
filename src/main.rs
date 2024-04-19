@@ -13,6 +13,7 @@ use windows::{
     },
 };
 mod windows_tools;
+use iced::event;
 
 // アプリケーションの状態を定義する構造体
 struct State {
@@ -23,10 +24,12 @@ struct State {
 }
 
 // メッセージを定義する列挙体
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone)]
 enum Message {
     IncrementPressed,
     WindowClosed,
+    EventOccurred(Event),
+    Exit,
 }
 
 impl Application for State {
@@ -59,17 +62,26 @@ impl Application for State {
                 // ウィンドウが閉じられたときの処理はここでは行わない
                 Command::none()
             }
+            Message::EventOccurred(event) => {
+                if let Event::Window(id, window::Event::CloseRequested) = event {
+                    window::close(id)
+                } else {
+                    Command::none()
+                }
+            }
+            Message::Exit => window::close(window::Id::MAIN),
         }
     }
 
     fn view(&self) -> Element<Self::Message> {
-        column::new()
-            .push(
-                Button::new(&mut self.increment_button, Text::new("Increment"))
-                    .on_press(Message::IncrementPressed),
-            )
-            .push(Text::new(self.value.to_string()))
-            .into()
+        "text".into()
+        /*column()
+        .push(
+            button(&mut self.increment_button, text("Increment"))
+                .on_press(Message::IncrementPressed),
+        )
+        .push(text(self.value.to_string()))
+        .into()*/
     }
 
     fn subscription(&self) -> Subscription<Self::Message> {
