@@ -1,6 +1,9 @@
+use anyhow::{anyhow, Result};
+use iced::futures::future::ok;
 use std::char::{decode_utf16, REPLACEMENT_CHARACTER};
 use std::fs;
 use std::path::Path;
+use std::ptr::write;
 use windows::Win32::Foundation::HMODULE;
 use windows::Win32::UI::WindowsAndMessaging::MB_ICONINFORMATION;
 use windows::{
@@ -32,6 +35,25 @@ impl std::fmt::Display for EnableVStylesErrors {
 }
 impl std::error::Error for EnableVStylesErrors {}
 
+#[derive(Debug)]
+struct MyWin32Err(u32);
+impl MyWin32Err {
+    fn new(win32_err: WIN32_ERROR) -> Self {
+        Self(win32_err.0)
+    }
+}
+impl std::fmt::Display for MyWin32Err {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "Win32 Error: {:?}", &self.0)
+    }
+}
+impl std::error::Error for MyWin32Err {}
+
+#[inline]
+fn win32_to_anyhow(win32_error: WIN32_ERROR) -> anyhow::Error {
+    anyhow!("Win32 Error: {}", win32_error.0)
+}
+
 /*
 This function is referred to
 [Native Windows GUI](https://github.com/gabdube/native-windows-gui) of
@@ -39,7 +61,7 @@ native_windows_gui::enable_visual_styles
 (in native_windows_gui/src/win32/mod.rs)
 Thanks to [gabdube](https://github.com/gabdube/) and conntoributers.
 */
-pub fn enable_visual_styles() -> std::result::Result<(), EnableVStylesErrors> {
+pub fn enable_visual_styles() -> Result<()> {
     const MAX_PATH_USIZE: usize = MAX_PATH as usize;
     const MANIFEST_CONTENT: &str = r#"
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
@@ -55,7 +77,7 @@ pub fn enable_visual_styles() -> std::result::Result<(), EnableVStylesErrors> {
     const ACTCTX_FLAG_SET_PROCESS_DEFAULT: u32 = 0x010;
     let mut tmp_dir = [0u16; MAX_PATH_USIZE + 1];
     if unsafe { GetTempPath2W(Some(&mut tmp_dir)) } == 0 {
-        return Err(EnableVStylesErrors::Win32(unsafe { GetLastError() }));
+        return Err(win32_to_anyhow(unsafe { GetLastError() }));
     }
     /*if tmp_dir.len() > MAX_PATH_USIZE - 14 {
         println!(
@@ -71,7 +93,7 @@ pub fn enable_visual_styles() -> std::result::Result<(), EnableVStylesErrors> {
     let prefix = w!("nwg");
     let manifest_dir_raw = PCWSTR::from_raw(&tmp_dir as *const u16);
     if unsafe { GetTempFileNameW(manifest_dir_raw, prefix, 0, &mut tmp_path) } == 0 {
-        return Err(EnableVStylesErrors::Win32(unsafe { GetLastError() }));
+        return Err(win32_to_anyhow(unsafe { GetLastError() }));
     };
     let manifest_path_utf16 = PCWSTR::from_raw(&tmp_path as *const u16);
     let manifest_path_len = tmp_path
@@ -80,9 +102,7 @@ pub fn enable_visual_styles() -> std::result::Result<(), EnableVStylesErrors> {
         .unwrap_or(tmp_path.len());
     let manifest_path =
         decode_utf16_with_capacity(&tmp_path[0..manifest_path_len], manifest_path_len);
-    if let Err(err) = fs::write(Path::new(&manifest_path), MANIFEST_CONTENT) {
-        return Err(EnableVStylesErrors::Standard(err));
-    };
+    fs::write(Path::new(&manifest_path), MANIFEST_CONTENT)?;
     let mut activation_cookie: usize = 0;
     let act_ctx = ACTCTXW {
         cbSize: std::mem::size_of::<ACTCTXW>() as u32,
@@ -100,22 +120,18 @@ pub fn enable_visual_styles() -> std::result::Result<(), EnableVStylesErrors> {
             Ok(handle) => handle,
             Err(_err) => {
                 if GetLastError() == WIN32_ERROR(0) {
-                    if let Err(err) = fs::remove_file(&manifest_path) {
-                        return Err(EnableVStylesErrors::Standard(err));
-                    };
+                    fs::remove_file(&manifest_path)?;
                     return Ok(());
                 } else {
-                    return Err(EnableVStylesErrors::Win32(GetLastError()));
+                    return Err(win32_to_anyhow(GetLastError()));
                 };
             }
         };
         if let Err(_err) = ActivateActCtx(handle, &mut activation_cookie) {
-            return Err(EnableVStylesErrors::Win32(GetLastError()));
+            return Err(win32_to_anyhow(GetLastError()));
         };
     };
-    if let Err(err) = fs::remove_file(&manifest_path) {
-        return Err(EnableVStylesErrors::Standard(err));
-    };
+    fs::remove_file(&manifest_path)?;
     Ok(())
 }
 
