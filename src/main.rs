@@ -33,7 +33,7 @@ struct State {
 enum Message {
     IncrementPressed,
     WindowClosed,
-    ExternalEventOccured(Event),
+    WindowEventOccured(Event),
 }
 
 impl Application for State {
@@ -66,7 +66,7 @@ impl Application for State {
                 // ウィンドウが閉じられたときの処理はここでは行わない
                 Command::none()
             }
-            Message::ExternalEventOccured(event) => {
+            Message::WindowEventOccured(event) => {
                 if let Event::Window(id, window::Event::CloseRequested) = event {
                     window::close(id)
                 } else {
@@ -118,7 +118,7 @@ impl Application for State {
             window::Event::Closed => Some(Message::WindowClosed),
             _ => None,
         })*/
-        event::listen().map(Message::ExternalEventOccured)
+        event::listen().map(Message::WindowEventOccured)
     }
 }
 
