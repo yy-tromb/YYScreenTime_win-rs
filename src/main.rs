@@ -1,31 +1,32 @@
+use anyhow::Result;
 use iced::alignment::{Horizontal, Vertical};
 use iced::font::{Family, Weight};
+use iced::{event, subscription};
+// use iced::multi_window;
 use iced::widget::{button, column, vertical_space, Button, Column, Container, Text};
 use iced::{
     executor, window, Alignment, Application, Command, Element, Event, Font, Length, Padding,
     Settings, Subscription, Theme,
 };
+use iced_aw::{tab_bar, tabs};
 
-use anyhow::Result;
 use windows::{
     core::*,
     Win32::{
         Foundation::{self, HWND},
         System::Threading::OpenProcess,
         UI::WindowsAndMessaging::{
-            EnumWindows, MessageBoxW, MB_ICONINFORMATION, MB_OK, MESSAGEBOX_STYLE,
+            EnumWindows, GetWindowThreadProcessId, MessageBoxW, MB_ICONINFORMATION, MB_OK,
+            MESSAGEBOX_STYLE,
         },
     },
 };
 mod windows_tools;
-use iced::event;
 
 // アプリケーションの状態を定義する構造体
 struct State {
     // 数値を保持するフィールド
     value: i32,
-    // ボタンの状態を保持するフィールド
-    increment_button: button::State,
 }
 
 // メッセージを定義する列挙体
@@ -43,13 +44,7 @@ impl Application for State {
     type Theme = Theme;
 
     fn new(_flags: Self::Flags) -> (Self, Command<Self::Message>) {
-        (
-            State {
-                value: 0,
-                increment_button: button::State::new(),
-            },
-            Command::none(),
-        )
+        (State { value: 0 }, Command::none())
     }
 
     fn title(&self) -> String {
@@ -118,7 +113,7 @@ impl Application for State {
             window::Event::Closed => Some(Message::WindowClosed),
             _ => None,
         })*/
-        event::listen().map(Message::WindowEventOccured)
+        Subscription::batch(vec![event::listen().map(Message::WindowEventOccured)])
     }
 }
 
@@ -136,7 +131,6 @@ fn main() -> Result<()> {
     let mut last_value = 0;
     let state = State {
         value: last_value, // 前回の値を引き継ぐ
-        increment_button: button::State::new(),
     };
     let mut settings = Settings::default();
     settings.antialiasing = true;
