@@ -1,9 +1,10 @@
 use anyhow::{anyhow, Result};
-use iced::futures::future::ok;
+
 use std::char::{decode_utf16, REPLACEMENT_CHARACTER};
 use std::fs;
 use std::path::Path;
 use std::ptr::write;
+
 use windows::Win32::Foundation::HMODULE;
 use windows::Win32::UI::WindowsAndMessaging::MB_ICONINFORMATION;
 use windows::{
