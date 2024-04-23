@@ -1,16 +1,5 @@
 use anyhow::Result;
 
-use iced::alignment::{Horizontal, Vertical};
-use iced::font::{Family, Weight};
-use iced::{event, subscription};
-// use iced::multi_window;
-use iced::widget::{button, column, vertical_space, Button, Column, Container, Text};
-use iced::{
-    executor, window, Alignment, Application, Command, Element, Event, Font, Length, Padding,
-    Settings, Subscription, Theme,
-};
-use iced_aw::{tab_bar, tabs};
-
 use tokio::net::windows::named_pipe;
 use tokio::process;
 
@@ -40,24 +29,7 @@ fn main() -> Result<()> {
             MB_OK | MB_ICONINFORMATION,
         )
     };
-    let mut last_value = 0;
-    let mut settings = Settings::default();
-    settings.antialiasing = true;
-    settings.fonts = vec![
-        include_bytes!("../fonts/IBMPlexSansJP-Regular.ttf")
-            .as_slice()
-            .into(),
-        include_bytes!("../fonts/IBMPlexSansJP-Bold.ttf")
-            .as_slice()
-            .into(),
-    ];
-    settings.default_font = Font::with_name("IBM Plex Sans JP");
-    settings.window = window::Settings {
-        exit_on_close_request: false,
-        ..window::Settings::default()
-    };
-    //settings.window.exit_on_close_request = false;
-    gui::State::run(settings);
+    gui::window_open()?;
     unsafe {
         MessageBoxW(
             HWND::default(),

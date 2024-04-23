@@ -103,3 +103,24 @@ impl Application for State {
         Subscription::batch(vec![event::listen().map(Message::WindowEventOccured)])
     }
 }
+
+pub fn window_open() -> anyhow::Result<()> {
+    let mut settings = Settings::default();
+    settings.antialiasing = true;
+    settings.fonts = vec![
+        include_bytes!("../fonts/IBMPlexSansJP-Regular.ttf")
+            .as_slice()
+            .into(),
+        include_bytes!("../fonts/IBMPlexSansJP-Bold.ttf")
+            .as_slice()
+            .into(),
+    ];
+    settings.default_font = Font::with_name("IBM Plex Sans JP");
+    settings.window = window::Settings {
+        exit_on_close_request: false,
+        ..window::Settings::default()
+    };
+    //settings.window.exit_on_close_request = false;
+    State::run(settings)?;
+    Ok(())
+}
