@@ -24,3 +24,7 @@ features = [
     "Win32_Storage_FileSystem",
     "Win32_System_ApplicationInstallationAndServicing",
 ]
+
+[profile.release]
+strip = true
+lto = true
