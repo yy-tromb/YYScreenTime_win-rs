@@ -7,16 +7,16 @@ repository = "https://github.com/yy-tromb/YYScreenTime_win-rs"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-anyhow = { version = "1.0.82", features = ["backtrace"] }
+anyhow = { version = "1.0.86", features = ["backtrace"] }
 iced = {version="0.12.1",features=[] }
 # iced = {version="0.13.0",features=["multi_window"] }
-iced_aw = "0.8.0"
-ipc-channel = "0.18.0"
+iced_aw = "0.9.3"
+ipc-channel = "0.18.1"
 remoc = "0.13.0"
-tokio = {version="1.37.0",features=["process","net"]}
+tokio = {version="1.38.0",features=["process","net"]}
 
 [dependencies.windows]
-version = "0.56.0"
+version = "0.57.0"
 features = [
     "Win32_Foundation",
     "Win32_UI_WindowsAndMessaging",
