@@ -1,24 +1,22 @@
-use anyhow::Result;
-
 use tokio::net::windows::named_pipe;
 use tokio::process;
 
 use windows::{
-    core::*,
     Win32::{
         Foundation::{self, HWND},
         System::Threading::OpenProcess,
         UI::WindowsAndMessaging::{
-            EnumWindows, GetWindowThreadProcessId, MessageBoxW, MB_ICONINFORMATION, MB_OK,
-            MESSAGEBOX_STYLE,
+            EnumWindows, GetWindowThreadProcessId, MB_ICONINFORMATION, MB_OK, MESSAGEBOX_STYLE,
+            MessageBoxW,
         },
     },
+    core::*,
 };
 mod gui;
 mod watcher;
 mod windows_tools;
 
-fn main() -> Result<()> {
+fn main() -> anyhow::Result<()> {
     windows_tools::enable_visual_styles()?;
     println!("Hello, World!");
     unsafe {
