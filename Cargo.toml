@@ -1,6 +1,7 @@
 [package]
 name = "YYScreenTime_win-rs"
 version = "0.1.0"
+authors = ["yy-tromb"]
 edition = "2024"
 repository = "https://github.com/yy-tromb/YYScreenTime_win-rs"
 
