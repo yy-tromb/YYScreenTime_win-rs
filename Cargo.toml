@@ -15,7 +15,7 @@ iced = {version="0.12.1",features=[] }
 iced_aw = "0.9.3"
 ipc-channel = "0.19.0"
 remoc = "0.14.0"
-tokio = {version="1.44.1",features=["process","net"]}
+tokio = {version="1.44.2",features=["process","net"]}
 
 [dependencies.windows]
 version = "0.58.0"
