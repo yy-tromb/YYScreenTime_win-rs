@@ -1,6 +1,6 @@
-use anyhow::{anyhow, Result};
+use anyhow::{Result, anyhow};
 
-use std::char::{decode_utf16, REPLACEMENT_CHARACTER};
+use std::char::{REPLACEMENT_CHARACTER, decode_utf16};
 use std::fs;
 use std::path::Path;
 use std::ptr::write;
@@ -8,16 +8,16 @@ use std::ptr::write;
 use windows::Win32::Foundation::HMODULE;
 use windows::Win32::UI::WindowsAndMessaging::MB_ICONINFORMATION;
 use windows::{
-    core::*,
     Win32::{
         Foundation::{self, GetLastError, HWND, MAX_PATH, WIN32_ERROR},
         Storage::FileSystem::{GetTempFileNameW, GetTempPath2W},
         System::{
-            ApplicationInstallationAndServicing::{ActivateActCtx, CreateActCtxW, ACTCTXW},
+            ApplicationInstallationAndServicing::{ACTCTXW, ActivateActCtx, CreateActCtxW},
             Threading::OpenProcess,
         },
-        UI::WindowsAndMessaging::{EnumWindows, MessageBoxW, MB_OK, MESSAGEBOX_STYLE},
+        UI::WindowsAndMessaging::{EnumWindows, MB_OK, MESSAGEBOX_STYLE, MessageBoxW},
     },
+    core::*,
 };
 
 #[macro_export]
@@ -42,7 +42,7 @@ pub fn enable_visual_styles() -> Result<()> {
     <description>YYScreenTime_win-rs comctl32 manifest</description>
     <dependency>
         <dependentAssembly>
-            <assemblyIdentity type="win32" name="Microsoft.Windows.Common-Controls" version="6.0.0.0" processorArchitecture="*" publicKeyToken="6595b64144ccf1df" language="*" /> 
+            <assemblyIdentity type="win32" name="Microsoft.Windows.Common-Controls" version="6.0.0.0" processorArchitecture="*" publicKeyToken="6595b64144ccf1df" language="*" />
         </dependentAssembly>
     </dependency>
 </assembly>
@@ -100,7 +100,7 @@ pub fn enable_visual_styles() -> Result<()> {
                 };
             }
         };
-        if let Err(_err) = ActivateActCtx(handle, &mut activation_cookie) {
+        if let Err(_err) = ActivateActCtx(Some(handle), &mut activation_cookie) {
             return Err(anyhow_win32!(GetLastError()));
         };
     };

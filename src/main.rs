@@ -21,7 +21,7 @@ fn main() -> anyhow::Result<()> {
     println!("Hello, World!");
     unsafe {
         MessageBoxW(
-            HWND::default(),
+            Some(HWND::default()),
             w!("Hello World!"),
             w!("YYScreenTime_win-rs"),
             MB_OK | MB_ICONINFORMATION,
@@ -30,7 +30,7 @@ fn main() -> anyhow::Result<()> {
     gui::window_open()?;
     unsafe {
         MessageBoxW(
-            HWND::default(),
+            Some(HWND::default()),
             w!("Hello World!"),
             w!("YYScreenTime_win-rs"),
             MB_OK | MB_ICONINFORMATION,
